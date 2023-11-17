@@ -23,24 +23,21 @@ export class ArticleService {
     // 循环爬取 10 页
     for (let pageNo = 1; pageNo <= 10; pageNo += 1) {
       await gotoWithRetries(page, `${url}${pageNo}`);
-      await page.waitForSelector('.list-card-bg .list-group');
-      const list = await page.$$eval(
-        '.list-card-bg .list-group .item-wrap',
-        (nodes) => {
-          const result: { title: string; articleId: string }[] = [];
-          nodes.forEach((node) => {
-            const title = node.querySelector('a.title');
-            if (title instanceof HTMLAnchorElement) {
-              const articleId = title.href.split('/').pop();
-              result.push({
-                title: title.innerText,
-                articleId,
-              });
-            }
-          });
-          return result;
-        },
-      );
+      await page.waitForSelector('.list-group');
+      const list = await page.$$eval('.list-group .item-wrap', (nodes) => {
+        const result: { title: string; articleId: string }[] = [];
+        nodes.forEach((node) => {
+          const title = node.querySelector('a.title');
+          if (title instanceof HTMLAnchorElement) {
+            const articleId = title.href.split('/').pop();
+            result.push({
+              title: title.innerText,
+              articleId,
+            });
+          }
+        });
+        return result;
+      });
       articleList.push(...list);
     }
     destroy();
