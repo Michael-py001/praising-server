@@ -19,8 +19,10 @@ export default async function browserInit(
       '--disable-setuid-sandbox',
       '--disable-infobars',
       '--allow-running-insecure-content',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--disable-site-isolation-trials',
     ],
-    devtools: false,
+    devtools: true,
   });
   const page = await browser.newPage();
 

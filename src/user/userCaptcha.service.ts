@@ -5,7 +5,7 @@ import { Account } from 'src/entities/account.entity';
 import { UserInfo } from 'src/entities/userinfo.entity';
 import { AccountLog } from 'src/entities/accountLog.entity';
 import browserInit from 'src/libs/browserInit';
-import { Page } from 'puppeteer';
+import { Frame, Page } from 'puppeteer';
 import fetchUserInfo from 'src/libs/pageControl/fetchUserInfo';
 import { cookiesToString } from 'src/libs/cookie';
 @Injectable()
@@ -20,14 +20,21 @@ export class UserCaptchaService {
   ) {}
 
   // 计算滑块缺口X轴位置
-  async getCaptchaX(page: Page) {
-    const coordinateShift = await page.evaluate(async () => {
+  async getCaptchaX(frame: Frame) {
+    await frame.waitForSelector('#captcha_verify_image');
+    const captchaImage = await frame.$('#captcha_verify_image');
+    console.log(captchaImage);
+    const coordinateShift = await frame.evaluate(async () => {
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(null);
+        }, 1000);
+      });
       const image = document.querySelector(
-        '#captcha-verify-image',
+        '.verify-image>#captcha_verify_image',
       ) as HTMLCanvasElement;
-      // const canvas = document.createElement('canvas');
-      // canvas.width = image.width;
-      // canvas.height = image.height;
+      console.log(document);
+      console.log('image', image);
       const ctx = image.getContext('2d');
       // 延时
       await new Promise((resolve) => {
@@ -76,7 +83,7 @@ export class UserCaptchaService {
     return coordinateShift * 0.625;
   }
   // 处理滑块逻辑
-  async handleDrag(page: Page) {
+  async handleDrag(page: Page, frame: Frame) {
     function easeOutBounce(t: number, b: number, c: number, d: number) {
       if ((t /= d) < 1 / 2.75) {
         return c * (7.5625 * t * t) + b;
@@ -89,15 +96,16 @@ export class UserCaptchaService {
       }
     }
     // 在浏览器中执行代码，获取图片，创建canvas
-    const coordinateShift = await this.getCaptchaX(page);
+    const coordinateShift = await this.getCaptchaX(frame);
     console.log(coordinateShift);
     if (coordinateShift) {
-      await page.waitForSelector('.secsdk-captcha-drag-icon');
-      const drag = await page.$('.secsdk-captcha-drag-icon');
+      await frame.waitForSelector('.captcha-slider-btn');
+      const drag = await frame.$('.captcha-slider-btn');
       console.log(drag);
       const dragBox = await drag.boundingBox();
       const dragX = dragBox.x + dragBox.width / 2;
       const dragY = dragBox.y + dragBox.height / 2;
+      console.log(dragX, dragY);
 
       await page.mouse.move(dragX, dragY);
       await page.mouse.down();
@@ -145,11 +153,14 @@ export class UserCaptchaService {
     await page.type('.input-group input[name="loginPassword"]', password);
     await page.click('.btn-login');
     console.log('点击登录');
-    // 等待 .captcha-verify-image
-    await page.waitForSelector('#captcha-verify-image');
-    console.log('获取到滑块验证码');
+    // 等待 .vc_captcha_wrapper 下的 iframe 加载完成
+    await page.waitForSelector('iframe');
+    // 获取 iframe
+    const elementHandle = await page.$('iframe');
+    // 获取 iframe 的 contentWindow
+    const frame = await elementHandle.contentFrame();
     try {
-      await this.handleDrag(page);
+      await this.handleDrag(page, frame);
     } catch (error) {
       console.log(error);
       destroy();
