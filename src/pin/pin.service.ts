@@ -180,7 +180,7 @@ export class PinService {
   }
 
   // 定时爬取沸点
-  @Cron('0 0 * * * *', { name: 'fetchPin', timeZone: 'Asia/Shanghai' })
+  @Cron('0 0 0 * * *', { name: 'fetchPin', timeZone: 'Asia/Shanghai' })
   async cronTask() {
     await this.fetchPin();
     await this.getKeyword();

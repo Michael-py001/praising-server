@@ -13,6 +13,7 @@ import { PinModule } from './pin/pin.module';
 import { StatisticModule } from './statistic/statistic.module';
 import { CommentModule } from './comment/comment.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ArticleModule } from './article/article.module';
 import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
@@ -57,6 +58,7 @@ import * as redisStore from 'cache-manager-redis-store';
     StatisticModule,
     CommentModule,
     PinModule,
+    ArticleModule,
   ],
   providers: [
     {
