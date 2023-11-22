@@ -20,9 +20,10 @@ export class ArticleService {
     const url = 'https://segmentfault.com/t/javascript/blogs?page=';
     const articleList = [];
 
-    // 循环爬取 10 页
-    for (let pageNo = 1; pageNo <= 10; pageNo += 1) {
+    // 循环爬取 5 页
+    for (let pageNo = 1; pageNo <= 5; pageNo += 1) {
       await gotoWithRetries(page, `${url}${pageNo}`);
+      console.log(`${url}${pageNo}`);
       await page.waitForSelector('.list-group');
       const list = await page.$$eval('.list-group .item-wrap', (nodes) => {
         const result: { title: string; articleId: string }[] = [];
@@ -60,7 +61,7 @@ export class ArticleService {
   }
 
   // 读取数据库中的文章列表，进行查询内容，定时任务
-  @Cron('0 * * * * *', { name: 'fetchArticle', timeZone: 'Asia/Shanghai' })
+  @Cron('0 0 * * * *', { name: 'fetchArticle', timeZone: 'Asia/Shanghai' })
   async fetchArticle() {
     // 查询 articleRepository 列表中，获取一条 content 为空的数据
     const article = await this.articleRepository.findOne({
