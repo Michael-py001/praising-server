@@ -179,6 +179,19 @@ export class PinService {
     return pin;
   }
 
+  // 根据 pinIds 获取 pin 详情
+  async getPinDetailList(ids: string[]) {
+    const pins = [];
+    // 根据 id 列表 ids 查询所有 pin
+    for (let i = 0; i < ids.length; i++) {
+      const pin = await this.pinRepository.findOne({
+        where: { pinId: ids[i] },
+      });
+      pins.push(pin);
+    }
+    return pins;
+  }
+
   // 定时爬取沸点
   @Cron('0 0 0 * * *', { name: 'fetchPin', timeZone: 'Asia/Shanghai' })
   async cronTask() {

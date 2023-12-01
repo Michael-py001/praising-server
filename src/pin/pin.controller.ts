@@ -1,6 +1,7 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { PinService } from './pin.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { PinsDto } from './pin.dto';
 
 @ApiTags('沸点分析')
 @Controller('pin')
@@ -47,6 +48,16 @@ export class PinController {
   @Get('detail')
   async getPinDetail(@Query('pinId') pinId: string) {
     const data = await this.pinService.getPinDetail(pinId);
+    return {
+      data,
+    };
+  }
+
+  // 根据沸点 ids 获取沸点详情
+  @ApiOperation({ summary: '根据ids获取详情' })
+  @Post('detailList')
+  async getPinDetailList(@Body() pinDto: PinsDto) {
+    const data = await this.pinService.getPinDetailList(pinDto.ids);
     return {
       data,
     };
