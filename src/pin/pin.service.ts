@@ -147,12 +147,12 @@ export class PinService {
   }
 
   // 数据库查询
-  async getKeywordList() {
+  async getKeywordList(size: number) {
     // 前 20 条数据，按照 hot 降序排列，isBlock 为 false
     const keywordList = await this.keywordRepository.find({
       where: { isBlock: false },
       order: { hot: 'DESC' },
-      take: 20,
+      take: size,
     });
     return keywordList.map((item) => ({
       ...item,

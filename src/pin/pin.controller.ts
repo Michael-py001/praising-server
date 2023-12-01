@@ -22,8 +22,8 @@ export class PinController {
 
   @ApiOperation({ summary: '获取关键词列表' })
   @Get('list')
-  async getKeywordList() {
-    const data = await this.pinService.getKeywordList();
+  async getKeywordList(@Query('size') size = 20) {
+    const data = await this.pinService.getKeywordList(Number(size));
     return {
       data,
     };
