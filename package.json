@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/axios": "^3.0.1",
     "@nestjs/bull": "^10.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^3.0.0",
@@ -33,6 +34,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "@nestjs/websockets": "^9.0.0",
     "@node-rs/jieba": "^1.7.2",
+    "axios": "^1.6.5",
     "bull": "^4.10.4",
     "cache-manager": "^3.6.0",
     "cache-manager-redis-store": "^2.0.0",
