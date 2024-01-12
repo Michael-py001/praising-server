@@ -6,6 +6,7 @@ export default async function fetchUserInfo(page: Page) {
   try {
     await page.goto('https://juejin.cn/creator/data/content/article/entire');
     const loginState = await checkLoginState(page);
+    await page.click('.avatar-wrapper');
     if (!loginState.state) return;
     // 获取头像
     await page.waitForSelector('.avatar-wrapper img');

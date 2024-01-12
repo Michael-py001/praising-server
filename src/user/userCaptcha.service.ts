@@ -143,7 +143,7 @@ export class UserCaptchaService {
   // 通过密码登录
   async loginWithPassword(account: string, password: string, shareId?: string) {
     console.log(account, password, shareId);
-    const { page, destroy } = await browserInit('new', true);
+    const { page, destroy } = await browserInit(false, true);
     await page.goto('https://juejin.cn/login');
     console.log('跳转');
     await page.waitForSelector('.other-login-box .clickable');
@@ -182,8 +182,6 @@ export class UserCaptchaService {
       .getOne();
     const cookies = await page.cookies();
     const cookie = cookiesToString(cookies);
-
-    console.log(cookie);
 
     const userInfo = {
       username,
