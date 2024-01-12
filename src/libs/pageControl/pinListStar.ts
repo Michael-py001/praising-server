@@ -3,8 +3,8 @@ import { Page } from 'puppeteer';
 // 沸点列表页 点赞
 export default async function pinListStar(page: Page) {
   try {
-    await page.waitForSelector('.pin-list .item');
-    const pins = await page.$$('.pin-list .item');
+    await page.waitForSelector('ul.pin-list li.item');
+    const pins = await page.$$('ul.pin-list li.item');
     // 随机获取一条沸点
     const random = Math.floor(Math.random() * pins.length);
     const pin = pins[random];

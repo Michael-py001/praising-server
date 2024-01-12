@@ -23,6 +23,7 @@ import {
 import publishArticle from 'src/libs/pageControl/publishArticle';
 import fetchSign from 'src/libs/pageControl/fetchSign';
 import { UserInfo } from 'src/entities/userinfo.entity';
+import scrollToBottom from 'src/libs/scrollToBottom';
 
 @Injectable()
 export class AutomateService {
@@ -90,6 +91,7 @@ export class AutomateService {
       await gotoWithRetries(page, 'https://juejin.cn/');
       const loginState = await checkLoginState(page);
       if (!loginState.state) return;
+      await scrollToBottom(page, 3);
       const data = await articleListStar(page);
       if (!data) return;
       this.accountLogsRepository.save({
