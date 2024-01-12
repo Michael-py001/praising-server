@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from 'src/entities/comment.entity';
+import { CommentDto } from './comment.dto';
 
 @Injectable()
 export class CommentService {
@@ -33,11 +34,21 @@ export class CommentService {
   }
 
   // 添加评论
-  async add(content: string) {
+  async add(commentData: CommentDto) {
     const comment = new Comment();
-    comment.content = content;
-    await this.commentRepository.save(comment);
-    return comment;
+    comment.content = commentData.content;
+    comment.type = commentData.type;
+    comment.enable = commentData.enable;
+    // 判断是否存在同样的 content
+    const existComment = await this.commentRepository.findOne({
+      where: { content: commentData.content },
+    });
+    if (existComment !== undefined) {
+      return false;
+    } else {
+      await this.commentRepository.save(comment);
+      return comment;
+    }
   }
 
   // 修改评论

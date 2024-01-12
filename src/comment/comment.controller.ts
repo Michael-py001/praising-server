@@ -28,8 +28,11 @@ export class CommentController {
   @ApiOperation({ summary: '添加评论' })
   @Post('add')
   @UseGuards(AuthAdminGuard)
-  async add(@Body() commentDto: CommentDto) {
-    const result = await this.commentService.add(commentDto.content);
+  async add(@Body() comment: CommentDto) {
+    const result = await this.commentService.add(comment);
+    if (!result) {
+      throw new Error('已存在相同的评论');
+    }
     return {
       data: result,
       message: '添加成功',
