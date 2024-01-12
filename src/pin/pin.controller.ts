@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { PinService } from './pin.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PinsDto } from './pin.dto';
 
 @ApiTags('沸点分析')
@@ -60,6 +60,59 @@ export class PinController {
     const data = await this.pinService.getPinDetailList(pinDto.ids);
     return {
       data,
+    };
+  }
+
+  // 分页查询沸点
+  @ApiOperation({ summary: '分页查询沸点' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: '页码',
+    example: '1',
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: '每页数量',
+    example: '10',
+  })
+  @ApiQuery({
+    name: 'isTemplate',
+    required: false,
+    description: '是否为模板',
+    example: 'false',
+  })
+  @Get('listPage')
+  async listPage(
+    @Query('page') page = '1',
+    @Query('pageSize') pageSize = '10',
+    @Query('isTemplate') isTemplate = 'false',
+  ) {
+    const data = await this.pinService.listPage(
+      Number(page),
+      Number(pageSize),
+      isTemplate === 'true',
+    );
+    return {
+      data,
+    };
+  }
+
+  // 设置沸点为模板
+  @ApiOperation({ summary: '设置沸点为模板' })
+  @Get('setTemplate')
+  async setTemplate(
+    @Query('id') id: number,
+    @Query('isTemplate') isTemplate: string,
+  ) {
+    const pin = await this.pinService.setTemplate(
+      Number(id),
+      isTemplate === 'true',
+    );
+    return {
+      data: pin,
+      message: '设置模板成功',
     };
   }
 }

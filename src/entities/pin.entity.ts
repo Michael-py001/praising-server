@@ -23,6 +23,7 @@ export class Pin {
   @Column({ nullable: true })
   like: number;
 
-  @Column({ nullable: false, default: false })
+  // 是否为模板
+  @Column({ default: false })
   isTemplate: boolean;
 }

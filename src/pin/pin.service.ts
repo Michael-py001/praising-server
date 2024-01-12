@@ -192,6 +192,35 @@ export class PinService {
     return pins;
   }
 
+  // 分页查询
+  async listPage(page: number, pageSize: number, isTemplate: boolean) {
+    const [records, total] = await this.pinRepository
+      .createQueryBuilder('pin')
+      .where('pin.isTemplate = :isTemplate', { isTemplate })
+      .andWhere('LENGTH(pin.content) < 100')
+      .orderBy('pin.id', 'DESC')
+      .take(pageSize)
+      .skip((page - 1) * pageSize)
+      .select(['pin.id', 'pin.content', 'pin.isTemplate'])
+      .getManyAndCount();
+
+    return {
+      records,
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  // 设置模板状态
+  async setTemplate(id: number, isTemplate: boolean) {
+    console.log(isTemplate);
+    const pin = await this.pinRepository.findOne({ where: { id } });
+    pin.isTemplate = isTemplate;
+    await this.pinRepository.save(pin);
+    return pin;
+  }
+
   // 定时爬取沸点
   @Cron('0 0 0 * * *', { name: 'fetchPin', timeZone: 'Asia/Shanghai' })
   async cronTask() {
