@@ -142,17 +142,15 @@ export class UserCaptchaService {
 
   // 通过密码登录
   async loginWithPassword(account: string, password: string, shareId?: string) {
-    console.log(account, password, shareId);
-    const { page, destroy } = await browserInit(false, true);
+    console.log('登录', account, password, shareId);
+    const { page, destroy } = await browserInit('new', true);
     await page.goto('https://juejin.cn/login');
-    console.log('跳转');
     await page.waitForSelector('.other-login-box .clickable');
     await page.click('.other-login-box .clickable');
     await page.waitForSelector('.input-group input[name="loginPhoneOrEmail"]');
     await page.type('.input-group input[name="loginPhoneOrEmail"]', account);
     await page.type('.input-group input[name="loginPassword"]', password);
     await page.click('.btn-login');
-    console.log('点击登录');
     // 等待 .vc_captcha_wrapper 下的 iframe 加载完成
     await page.waitForSelector('iframe');
     // 获取 iframe
