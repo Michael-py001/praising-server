@@ -22,4 +22,7 @@ export class Pin {
 
   @Column({ nullable: true })
   like: number;
+
+  @Column({ nullable: false, default: false })
+  isTemplate: boolean;
 }
