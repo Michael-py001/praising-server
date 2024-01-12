@@ -32,7 +32,7 @@ export class QueryAccountInformationService {
 
   // 每日 3 点更新账号信息
   @Cron('0 30 3 * * *', { name: 'checkCookie', timeZone: 'Asia/Shanghai' })
-  autoSign() {
+  auto() {
     this.queryAccountInformation();
   }
 }

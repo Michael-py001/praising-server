@@ -32,7 +32,7 @@ export class CheckCookieService {
 
   // 每日 3 点检测 cookie 是否过期
   @Cron('0 0 3 * * *', { name: 'checkCookie', timeZone: 'Asia/Shanghai' })
-  autoSign() {
+  auto() {
     this.checkCookie();
   }
 }

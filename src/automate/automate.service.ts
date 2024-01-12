@@ -43,10 +43,7 @@ export class AutomateService {
   async autoSign() {
     const accounts = await this.accountService.getAccountInfo();
     await loopPages(accounts, async (page, index) => {
-      await gotoWithRetries(
-        page,
-        'https://juejin.cn/user/center/signin?from=main_page',
-      );
+      await gotoWithRetries(page, 'https://juejin.cn/user/center/signin');
       const loginState = await checkLoginState(page);
       if (!loginState.state) return;
       const isSign = await fetchSign(page);
