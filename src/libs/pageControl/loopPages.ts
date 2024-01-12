@@ -28,5 +28,5 @@ export default async function loopPages(
     // 清理 cookie
     await page.deleteCookie();
   }
-  browser.close();
+  await browser.close();
 }

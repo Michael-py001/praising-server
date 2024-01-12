@@ -4,6 +4,7 @@ export default async function fetchFollow(page: Page) {
   await page.waitForSelector('.hot-list > .author-item-link');
   const authorList = await page.$$('.hot-list > .author-item-link');
   // 获取一个未关注的作者
+  await page.waitForTimeout(1000);
   const unconcernedAuthor: ElementHandle<Element>[] = [];
   for (let j = 0; j < authorList.length; j++) {
     const follow = await authorList[j].$('.byte-btn--primary');

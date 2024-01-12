@@ -62,25 +62,29 @@ export class AutomateService {
   // 自动关注
   async autoFollow() {
     const accounts = await this.accountService.getAccountInfo();
-    await loopPages(accounts, async (page, index) => {
-      await gotoWithRetries(
-        page,
-        'https://juejin.cn/hot/authors/6809637767543259144/1',
-      );
-      const loginState = await checkLoginState(page);
-      if (!loginState.state) return;
-      const name = await fetchFollow(page);
-      this.accountLogsRepository.save({
-        type: '账号',
-        event: '关注',
-        content: name,
-        record: '关注成功',
-        account: accounts[index].id,
-      });
-      await this.userInfoRepository.update(accounts[index].userInfo.id, {
-        contribution: accounts[index].userInfo.contribution + 20,
-      });
-    });
+    await loopPages(
+      accounts,
+      async (page, index) => {
+        await gotoWithRetries(
+          page,
+          'https://juejin.cn/hot/authors/6809637767543259144/1',
+        );
+        const loginState = await checkLoginState(page);
+        if (!loginState.state) return;
+        const name = await fetchFollow(page);
+        this.accountLogsRepository.save({
+          type: '账号',
+          event: '关注',
+          content: name,
+          record: '关注成功',
+          account: accounts[index].id,
+        });
+        await this.userInfoRepository.update(accounts[index].userInfo.id, {
+          contribution: accounts[index].userInfo.contribution + 20,
+        });
+      },
+      false,
+    );
   }
 
   // 文章自动点赞
