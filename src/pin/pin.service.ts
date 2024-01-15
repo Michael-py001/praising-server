@@ -225,7 +225,6 @@ export class PinService {
     const [records, total] = await this.pinRepository
       .createQueryBuilder('pin')
       .where('pin.isTemplate = :isTemplate', { isTemplate })
-      .andWhere('LENGTH(pin.content) < 100')
       .andWhere('pin.aiReviewResult = :aiReviewResult', { aiReviewResult })
       .orderBy('pin.id', 'DESC')
       .take(pageSize)
