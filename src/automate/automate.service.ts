@@ -134,6 +134,7 @@ export class AutomateService {
     const accounts = await this.accountService.getAccountInfo();
     const comments = await this.commentRepository
       .createQueryBuilder('comment')
+      .where('comment.type = :type', { type: '好评' })
       .getMany();
 
     await loopPages(accounts, async (page, index) => {
