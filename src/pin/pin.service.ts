@@ -7,6 +7,9 @@ import { Keyword } from '../entities/keyword.entity';
 import browserInit from 'src/libs/browserInit';
 import { extract } from '@node-rs/jieba';
 import { Cron } from '@nestjs/schedule';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PinService {
@@ -15,6 +18,8 @@ export class PinService {
     private readonly pinRepository: Repository<Pin>,
     @InjectRepository(Keyword)
     private readonly keywordRepository: Repository<Keyword>,
+    private readonly httpService: HttpService,
+    private configService: ConfigService,
   ) {}
 
   // 统计
@@ -211,11 +216,17 @@ export class PinService {
   }
 
   // 分页查询
-  async listPage(page: number, pageSize: number, isTemplate: boolean) {
+  async listPage(
+    page: number,
+    pageSize: number,
+    isTemplate: boolean,
+    aiReviewResult: boolean,
+  ) {
     const [records, total] = await this.pinRepository
       .createQueryBuilder('pin')
       .where('pin.isTemplate = :isTemplate', { isTemplate })
       .andWhere('LENGTH(pin.content) < 100')
+      .andWhere('pin.aiReviewResult = :aiReviewResult', { aiReviewResult })
       .orderBy('pin.id', 'DESC')
       .take(pageSize)
       .skip((page - 1) * pageSize)
@@ -237,6 +248,56 @@ export class PinService {
     pin.isTemplate = isTemplate;
     await this.pinRepository.save(pin);
     return pin;
+  }
+
+  // ai 识别沸点内容
+  // 每小时处理一次
+  @Cron('0 0 * * * *', { name: 'aiReview', timeZone: 'Asia/Shanghai' })
+  async aiReview() {
+    // 获取 30 条未审核的沸点，且不是模板
+    const pins = await this.pinRepository.find({
+      where: { aiReview: false, isTemplate: false },
+      take: 30,
+    });
+    // 如果没有未审核的沸点，返回
+    if (pins.length === 0) return;
+    // 遍历 pins，调用 ai 识别接口
+    for (let i = 0; i < pins.length; i++) {
+      const pin = pins[i];
+      const { content } = pin;
+      const chatContent = `判断这个沸点"${content}"是否出现了时间，地点，事件，只回复是或否`;
+      console.log(content);
+      // 获取环境变量
+      const chatKey = this.configService.get<string>('CHAT_KEY');
+      const { data } = await firstValueFrom(
+        this.httpService.post(
+          'https://api.chatanywhere.com.cn/v1/chat/completions',
+          {
+            model: 'gpt-3.5-turbo',
+            messages: [
+              {
+                role: 'user',
+                content: chatContent,
+              },
+            ],
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${chatKey}`,
+            },
+          },
+        ),
+      );
+      if (data) {
+        pin.aiReview = true;
+        await this.pinRepository.save(pin);
+      }
+      if (data.choices[0].message.content.includes('否')) {
+        pin.aiReviewResult = true;
+        await this.pinRepository.save(pin);
+      }
+    }
   }
 
   // 定时爬取沸点

@@ -93,16 +93,24 @@ export class PinController {
     description: '是否为模板',
     example: 'false',
   })
+  @ApiQuery({
+    name: 'aiReviewResult',
+    required: false,
+    description: 'AI 识别结果',
+    example: true,
+  })
   @Get('listPage')
   async listPage(
     @Query('page') page = '1',
     @Query('pageSize') pageSize = '10',
     @Query('isTemplate') isTemplate = 'false',
+    @Query('aiReviewResult') aiReviewResult = 'false',
   ) {
     const data = await this.pinService.listPage(
       Number(page),
       Number(pageSize),
       isTemplate === 'true',
+      aiReviewResult === 'true',
     );
     return {
       data,
@@ -123,6 +131,17 @@ export class PinController {
     return {
       data: pin,
       message: '设置模板成功',
+    };
+  }
+
+  // AI 识别沸点
+  @ApiOperation({ summary: 'AI 识别沸点' })
+  @Get('aiReview')
+  async aiReview() {
+    const pin = await this.pinService.aiReview();
+    return {
+      data: pin,
+      message: 'AI 识别沸点成功',
     };
   }
 }
