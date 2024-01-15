@@ -49,6 +49,13 @@ export default async function fetchUserInfo(page: Page) {
       '.card-warp .data-card div.data',
       (nodes) => nodes.map((node) => Number.parseInt(node.innerText)),
     );
+    // 获取矿石数据
+    await page.goto('https://juejin.cn/user/center/signin');
+    await page.waitForSelector('.figures');
+    await page.waitForTimeout(2000);
+    const signinInfo = await page.$$eval('.figures span.figure', (nodes) =>
+      nodes.map((node) => Number.parseInt(node.innerText)),
+    );
     return {
       username: loginState.username.trim(),
       userId,
@@ -56,6 +63,7 @@ export default async function fetchUserInfo(page: Page) {
       starNumber,
       articleInfo,
       pinInfo,
+      signinInfo,
     };
   } catch (error) {
     return false;

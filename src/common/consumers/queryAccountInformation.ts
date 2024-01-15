@@ -27,8 +27,15 @@ export class QueryAccountInformationConsumer {
       await setCookie(page, accounts[index].cookie);
       const userInfo = await fetchUserInfo(page);
       if (!userInfo) return;
-      const { username, userId, starNumber, articleInfo, pinInfo, avatar } =
-        userInfo;
+      const {
+        username,
+        userId,
+        starNumber,
+        articleInfo,
+        pinInfo,
+        avatar,
+        signinInfo,
+      } = userInfo;
       await this.userInfoRepository.update(
         { id: accounts[index].userInfo.id },
         {
@@ -46,6 +53,9 @@ export class QueryAccountInformationConsumer {
           totalPin: pinInfo[0],
           totalPinLike: pinInfo[1],
           totalPinComment: pinInfo[2],
+          consecutiveDays: signinInfo[0],
+          totalDays: signinInfo[1],
+          totalMoney: signinInfo[2],
         },
       );
       await this.accountLogsRepository.save({

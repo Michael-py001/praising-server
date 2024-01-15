@@ -26,6 +26,18 @@ export class UserInfo {
   @Column({ default: 0 })
   contribution: number;
 
+  // 连续签到天数
+  @Column({ default: 0 })
+  consecutiveDays: number;
+
+  // 总签到天数
+  @Column({ default: 0 })
+  totalDays: number;
+
+  // 总矿石数
+  @Column({ default: 0 })
+  totalMoney: number;
+
   // 对别人的文章点赞数
   @Column({ default: 0 })
   userArticleLike: number;

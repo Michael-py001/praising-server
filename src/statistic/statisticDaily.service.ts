@@ -59,7 +59,7 @@ export class StatisicDailyService {
     const articleLikeCount = await this.accountLogRepository
       .createQueryBuilder()
       .where('type = :type', { type: '文章' })
-      .andWhere('event = :event', { event: '点赞收藏' })
+      .andWhere('event = :event', { event: '点赞' })
       .andWhere('createdAt BETWEEN :yesterday AND :tomorrow', {
         yesterday,
         tomorrow,
