@@ -157,6 +157,14 @@ export class AutomateService {
       await this.userInfoRepository.update(userInfo.id, {
         contribution: userInfo.contribution + 20,
       });
+      // 评论次数 + 1
+      const commentId = data.id;
+      await this.commentRepository.findOne({
+        where: { id: commentId },
+      });
+      await this.commentRepository.update(commentId, {
+        useCount: data.useCount + 1,
+      });
     });
   }
 

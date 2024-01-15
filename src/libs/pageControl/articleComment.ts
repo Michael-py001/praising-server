@@ -24,6 +24,8 @@ export default async function articleComment(page: Page, comments: Comment[]) {
       title: article.title,
       link: article.href,
       comment: comment.content,
+      id: comment.id,
+      useCount: comment.useCount,
     };
   } catch (error) {
     return false;
