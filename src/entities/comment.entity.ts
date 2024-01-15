@@ -16,7 +16,7 @@ export class Comment {
   @Column({ default: false })
   enable: boolean;
 
-  // 评论类型 好评、废话、差评
+  // 评论类型 好评、废话、差评、爬虫
   @Column({ default: '好评' })
   type: string;
 

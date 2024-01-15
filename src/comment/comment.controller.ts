@@ -67,4 +67,15 @@ export class CommentController {
       message: '删除成功',
     };
   }
+
+  // 爬虫获取评论
+  @ApiOperation({ summary: '爬虫获取评论' })
+  @Get('spider')
+  async spider() {
+    const result = await this.commentService.spider();
+    return {
+      data: result,
+      message: '获取成功',
+    };
+  }
 }
