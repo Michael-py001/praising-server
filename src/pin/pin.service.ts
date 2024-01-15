@@ -256,7 +256,7 @@ export class PinService {
     // 获取 30 条未审核的沸点，且不是模板
     const pins = await this.pinRepository.find({
       where: { aiReview: false, isTemplate: false },
-      take: 30,
+      take: 50,
     });
     // 如果没有未审核的沸点，返回
     if (pins.length === 0) return;
