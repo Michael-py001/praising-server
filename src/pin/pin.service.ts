@@ -32,8 +32,18 @@ export class PinService {
     const templateTotal = await this.pinRepository.count({
       where: { isTemplate: true },
     });
+    // 已审核的沸点数
+    const aiReviewTotal = await this.pinRepository.count({
+      where: { aiReview: true },
+    });
+    // AI审核通过的沸点数
+    const aiReviewResultTotal = await this.pinRepository.count({
+      where: { aiReviewResult: true },
+    });
 
     return {
+      aiReviewTotal,
+      aiReviewResultTotal,
       pinsTotal,
       keywordsTotal,
       templateTotal,
