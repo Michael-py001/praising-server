@@ -150,10 +150,12 @@ export class AutomateService {
         record: data.comment,
         account: accounts[index].id,
       });
-      this.accountRepository.update(accounts[index].id, {
-        userInfo: {
-          contribution: accounts[index].userInfo.contribution + 20,
-        },
+      const id = accounts[index].id;
+      const userInfo = await this.userInfoRepository.findOne({
+        where: { id },
+      });
+      await this.userInfoRepository.update(userInfo.id, {
+        contribution: userInfo.contribution + 20,
       });
     });
   }

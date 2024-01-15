@@ -30,18 +30,18 @@ export class ArticleStarConsumer {
       if (isStar && isCollection) {
         await this.accountLogsRepository.save({
           type: '文章',
-          event: '点赞收藏',
+          event: '点赞',
           link: url,
           content: title,
-          record: '重复点赞收藏， 跳过',
+          record: '重复点赞， 跳过',
           account: accounts[index].id,
         });
       } else {
         await this.accountLogsRepository.save({
           type: '文章',
-          event: '点赞收藏',
+          event: '点赞',
           link: url,
-          record: '点赞收藏成功',
+          record: '点赞成功',
           content: title,
           account: accounts[index].id,
         });
