@@ -21,6 +21,16 @@ export class PinController {
     return '执行分析完成';
   }
 
+  // 统计
+  @ApiOperation({ summary: '统计' })
+  @Get('statistics')
+  async statistics() {
+    const data = await this.pinService.statistics();
+    return {
+      data,
+    };
+  }
+
   @ApiOperation({ summary: '获取关键词列表' })
   @Get('list')
   async getKeywordList(@Query('size') size = 20) {

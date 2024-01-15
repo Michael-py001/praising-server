@@ -17,6 +17,24 @@ export class PinService {
     private readonly keywordRepository: Repository<Keyword>,
   ) {}
 
+  // 统计
+  async statistics() {
+    // 获取沸点总数
+    const pinsTotal = await this.pinRepository.count();
+    // 获取关键词总数
+    const keywordsTotal = await this.keywordRepository.count();
+    // 获取沸点模板总数
+    const templateTotal = await this.pinRepository.count({
+      where: { isTemplate: true },
+    });
+
+    return {
+      pinsTotal,
+      keywordsTotal,
+      templateTotal,
+    };
+  }
+
   // 爬虫， 爬取热门沸点
   async fetchPin() {
     const { page, destroy } = await browserInit('new', true);
