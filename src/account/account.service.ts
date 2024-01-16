@@ -186,12 +186,12 @@ export class AccountService {
       where: { id },
       relations: ['userInfo'],
     });
-    const { page } = await browserInit('new', true);
+    const { page, destroy } = await browserInit('new', true);
     await setCookie(page, account.cookie);
     const messages: Message[] = [];
     // 获取评论消息
     await page.goto('https://juejin.cn/notification');
-    await page.waitForSelector('.notification-list .item');
+    await page.waitForSelector('.notification-list');
     await page.waitForTimeout(1000);
     const commentList = await page.$$('.notification-list .item');
     for (let index = 0; index < commentList.length; index++) {
@@ -229,7 +229,7 @@ export class AccountService {
 
     // 获取点赞和收藏消息
     await page.goto('https://juejin.cn/notification/digg');
-    await page.waitForSelector('.notification-list .item');
+    await page.waitForSelector('.notification-list');
     await page.waitForTimeout(1000);
     const diggList = await page.$$('.notification-list .item');
     for (let index = 0; index < diggList.length; index++) {
@@ -274,8 +274,11 @@ export class AccountService {
       { id: account.userInfo.id },
       { unreadMessage: 0 },
     );
+
     // 将message 按照 time 时间排序
     messages.sort((a, b) => b.time - a.time);
+
+    destroy();
     return messages;
   }
 }
