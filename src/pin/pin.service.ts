@@ -287,7 +287,7 @@ export class PinService {
     for (let i = 0; i < pins.length; i++) {
       const pin = pins[i];
       const { content } = pin;
-      const chatContent = `判断这个沸点"${content}"是否出现了时间，地点，事件，只回复是或否`;
+      const chatContent = `判断这个沸点"${content}"是否出现了"时间"、"地点"、"描述了一可能最近的事"，只回复是或否`;
       // 获取环境变量
       const chatKey = this.configService.get<string>('CHAT_KEY');
       const { data } = await firstValueFrom(
@@ -316,6 +316,7 @@ export class PinService {
       }
       if (data.choices[0].message.content.includes('否')) {
         pin.aiReviewResult = true;
+        pin.isTemplate = true;
         await this.pinRepository.save(pin);
       }
     }
