@@ -35,6 +35,7 @@ export class QueryAccountInformationConsumer {
         pinInfo,
         avatar,
         signinInfo,
+        unreadMessage,
       } = userInfo;
       await this.userInfoRepository.update(
         { id: accounts[index].userInfo.id },
@@ -56,6 +57,7 @@ export class QueryAccountInformationConsumer {
           consecutiveDays: signinInfo[0],
           totalDays: signinInfo[1],
           totalMoney: signinInfo[2],
+          unreadMessage,
         },
       );
       await this.accountLogsRepository.save({

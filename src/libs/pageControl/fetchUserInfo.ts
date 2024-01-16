@@ -5,6 +5,22 @@ import checkLoginState from './checkLoginState';
 export default async function fetchUserInfo(page: Page) {
   try {
     await page.goto('https://juejin.cn/creator/data/content/article/entire');
+    // 获取未读信息
+    await page.waitForSelector('.notification', {
+      timeout: 5000,
+    });
+    const notification = await page.$('.notification');
+    // 判断是否存在 span.count
+    const count = await notification.$('.count');
+    let unreadMessage = 0;
+    if (count) {
+      unreadMessage = await page.$eval(
+        '.notification .notification-a span.count',
+        (node) => {
+          return Number.parseInt(node.innerText.trim());
+        },
+      );
+    }
     const loginState = await checkLoginState(page);
     await page.click('.avatar-wrapper');
     if (!loginState.state) return;
@@ -64,8 +80,10 @@ export default async function fetchUserInfo(page: Page) {
       articleInfo,
       pinInfo,
       signinInfo,
+      unreadMessage,
     };
   } catch (error) {
+    console.log(error);
     return false;
   }
 }

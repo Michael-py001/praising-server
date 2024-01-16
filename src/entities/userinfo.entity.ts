@@ -26,6 +26,10 @@ export class UserInfo {
   @Column({ default: 0 })
   contribution: number;
 
+  // 未读消息
+  @Column({ default: 0 })
+  unreadMessage: number;
+
   // 连续签到天数
   @Column({ default: 0 })
   consecutiveDays: number;
