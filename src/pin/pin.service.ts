@@ -273,13 +273,13 @@ export class PinService {
   }
 
   // ai 识别沸点内容
-  // 每小时处理一次
-  @Cron('0 0 * * * *', { name: 'aiReview', timeZone: 'Asia/Shanghai' })
+  // 每 1 分钟执行一次
+  @Cron('0 */1 * * * *', { name: 'aiReview', timeZone: 'Asia/Shanghai' })
   async aiReview() {
     // 获取 30 条未审核的沸点，且不是模板
     const pins = await this.pinRepository.find({
       where: { aiReview: false, isTemplate: false },
-      take: 50,
+      take: 5,
     });
     // 如果没有未审核的沸点，返回
     if (pins.length === 0) return;
