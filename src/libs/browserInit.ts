@@ -26,7 +26,15 @@ export default async function browserInit(
   });
   const page = await browser.newPage();
 
+  const timeout = 6 * 60 * 60 * 1000; // 6 hour in milliseconds
+  const timeoout = setTimeout(() => {
+    browser.close();
+  }, timeout);
+
   function destroy() {
+    if (timeoout) {
+      clearTimeout(timeoout);
+    }
     browser.close();
   }
 
