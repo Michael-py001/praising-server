@@ -134,6 +134,23 @@ export class PinController {
     };
   }
 
+  // 人工审核
+  @ApiOperation({ summary: '人工审核' })
+  @Get('setAiReviewResult')
+  async setAiReviewResult(
+    @Query('id') id: number,
+    @Query('aiReviewResult') aiReviewResult: string,
+  ) {
+    const pin = await this.pinService.setAiReviewResult(
+      Number(id),
+      aiReviewResult === 'true',
+    );
+    return {
+      data: pin,
+      message: '人工审核成功',
+    };
+  }
+
   // AI 识别沸点
   @ApiOperation({ summary: 'AI 识别沸点' })
   @Get('aiReview')

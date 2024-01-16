@@ -239,7 +239,13 @@ export class PinService {
       .orderBy('pin.id', 'DESC')
       .take(pageSize)
       .skip((page - 1) * pageSize)
-      .select(['pin.id', 'pin.content', 'pin.isTemplate'])
+      .select([
+        'pin.id',
+        'pin.content',
+        'pin.isTemplate',
+        'pin.aiReview',
+        'pin.aiReviewResult',
+      ])
       .getManyAndCount();
 
     return {
@@ -252,9 +258,16 @@ export class PinService {
 
   // 设置模板状态
   async setTemplate(id: number, isTemplate: boolean) {
-    console.log(isTemplate);
     const pin = await this.pinRepository.findOne({ where: { id } });
     pin.isTemplate = isTemplate;
+    await this.pinRepository.save(pin);
+    return pin;
+  }
+
+  // 人工审核
+  async setAiReviewResult(id: number, aiReviewResult: boolean) {
+    const pin = await this.pinRepository.findOne({ where: { id } });
+    pin.aiReviewResult = aiReviewResult;
     await this.pinRepository.save(pin);
     return pin;
   }
@@ -275,7 +288,6 @@ export class PinService {
       const pin = pins[i];
       const { content } = pin;
       const chatContent = `判断这个沸点"${content}"是否出现了时间，地点，事件，只回复是或否`;
-      console.log(content);
       // 获取环境变量
       const chatKey = this.configService.get<string>('CHAT_KEY');
       const { data } = await firstValueFrom(
