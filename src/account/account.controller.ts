@@ -50,6 +50,16 @@ export class AccountController {
     };
   }
 
+  @ApiOperation({ summary: '查询消息' })
+  @Get('findMessage')
+  async findMessage(@Query('id') id: string) {
+    const data = await this.accountService.findMessage(Number.parseInt(id));
+    return {
+      data,
+      message: '查询成功',
+    };
+  }
+
   @ApiOperation({ summary: '手动登录获取 cookie（本地服务）' })
   @Get('getCookie')
   @UseGuards(AuthAdminGuard)

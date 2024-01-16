@@ -11,6 +11,18 @@ import { setCookie } from 'src/libs/cookie';
 import browserInit from 'src/libs/browserInit';
 import { UserCaptchaService } from 'src/user/userCaptcha.service';
 
+export interface Message {
+  type: string;
+  avatar: string;
+  name: string;
+  userUrl: string;
+  contentUrl?: string;
+  comment?: string;
+  reference?: string;
+  title: string;
+  time: number;
+}
+
 @Injectable()
 export class AccountService {
   constructor(
@@ -18,6 +30,8 @@ export class AccountService {
     private accountRepository: Repository<Account>,
     @InjectRepository(AccountLog)
     private readonly accountLogRepository: Repository<AccountLog>,
+    @InjectRepository(UserInfo)
+    private readonly userInfoRepository: Repository<UserInfo>,
     private readonly userCaptchaService: UserCaptchaService,
   ) {}
 
@@ -164,5 +178,104 @@ export class AccountService {
         console.log(error);
       }
     }
+  }
+
+  // 查询账号消息
+  async findMessage(id: number) {
+    const account = await this.accountRepository.findOne({
+      where: { id },
+      relations: ['userInfo'],
+    });
+    const { page } = await browserInit('new', true);
+    await setCookie(page, account.cookie);
+    const messages: Message[] = [];
+    // 获取评论消息
+    await page.goto('https://juejin.cn/notification');
+    await page.waitForSelector('.notification-list .item');
+    await page.waitForTimeout(1000);
+    const commentList = await page.$$('.notification-list .item');
+    for (let index = 0; index < commentList.length; index++) {
+      const item = commentList[index];
+      const avatar = await item.$eval('.avatar img', (node) => node.src);
+      const name = await item.$eval(
+        '.profile a span',
+        (node) => node.textContent,
+      );
+      const userUrl = await item.$eval('.profile a', (node) => node.href);
+      const contentUrl = '';
+      const comment = await item.$eval('.comment', (node) => node.textContent);
+      const reference = await item.$eval('.reference div', (node) =>
+        node.innerText.trim(),
+      );
+      const title = await item.$eval('span.title', (node) =>
+        node.innerText.trim(),
+      );
+      const time = await item.$eval('.action-time', (node) =>
+        Number.parseInt(node.getAttribute('datetime')),
+      );
+      const message = {
+        type: '评论',
+        avatar,
+        name,
+        userUrl,
+        contentUrl,
+        comment,
+        reference,
+        title,
+        time,
+      };
+      messages.push(message);
+    }
+
+    // 获取点赞和收藏消息
+    await page.goto('https://juejin.cn/notification/digg');
+    await page.waitForSelector('.notification-list .item');
+    await page.waitForTimeout(1000);
+    const diggList = await page.$$('.notification-list .item');
+    for (let index = 0; index < diggList.length; index++) {
+      const item = diggList[index];
+      const avatar = await item.$eval('.avatar img', (node) => node.src);
+      const name = await item.$eval(
+        '.profile a span',
+        (node) => node.textContent,
+      );
+      const userUrl = await item.$eval('.profile a', (node) => node.href);
+      const contentUrl = '';
+      const title = await item.$eval('span.title', (node) =>
+        node.innerText.trim(),
+      );
+      const timeNode = await item.$('.action-time');
+      let time = 0;
+      if (timeNode) {
+        time = await item.$eval('time.action-time', (node) =>
+          Number.parseInt(node.getAttribute('datetime')),
+        );
+      }
+      const message = {
+        type: '点赞和收藏',
+        avatar,
+        name,
+        userUrl,
+        contentUrl,
+        title,
+        time,
+      };
+      if (time !== 0) {
+        messages.push(message);
+      }
+    }
+    // 点击其他列，清除红点
+    await page.goto('https://juejin.cn/notification/follow');
+    await page.goto('https://juejin.cn/notification/im');
+    await page.goto('https://juejin.cn/notification/system');
+
+    // 将账号的消息数量置为 0
+    this.userInfoRepository.update(
+      { id: account.userInfo.id },
+      { unreadMessage: 0 },
+    );
+    // 将message 按照 time 时间排序
+    messages.sort((a, b) => b.time - a.time);
+    return messages;
   }
 }
