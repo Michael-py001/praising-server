@@ -9,11 +9,12 @@ import { AccountLog } from 'src/entities/accountLog.entity';
 import { Account } from 'src/entities/account.entity';
 import { UserInfo } from 'src/entities/userinfo.entity';
 import { Comment } from 'src/entities/comment.entity';
+import { Pin } from 'src/entities/pin.entity';
 
 @Module({
   imports: [
     AccountModule,
-    TypeOrmModule.forFeature([AccountLog, Account, UserInfo, Comment]),
+    TypeOrmModule.forFeature([AccountLog, Account, UserInfo, Comment, Pin]),
   ],
   controllers: [AutomateController],
   providers: [AutomateService],

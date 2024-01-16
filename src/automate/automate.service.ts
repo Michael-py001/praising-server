@@ -14,7 +14,6 @@ import articleListStar from 'src/libs/pageControl/articleListStar';
 import pinListStar from 'src/libs/pageControl/pinListStar';
 import gotoWithRetries from 'src/libs/gotoWithRetries';
 import articleComment from 'src/libs/pageControl/articleComment';
-import fetchPinListFromV2ex from 'src/libs/pageControl/fetchPinListFromV2ex';
 import publishPin from 'src/libs/pageControl/publishPin';
 import {
   fetchArticle,
@@ -24,6 +23,7 @@ import publishArticle from 'src/libs/pageControl/publishArticle';
 import fetchSign from 'src/libs/pageControl/fetchSign';
 import { UserInfo } from 'src/entities/userinfo.entity';
 import scrollToBottom from 'src/libs/scrollToBottom';
+import { Pin } from 'src/entities/pin.entity';
 
 @Injectable()
 export class AutomateService {
@@ -36,6 +36,8 @@ export class AutomateService {
     private userInfoRepository: Repository<UserInfo>,
     @InjectRepository(Comment)
     private commentRepository: Repository<Comment>,
+    @InjectRepository(Pin)
+    private pinRepository: Repository<Pin>,
     private schedulerRegistry: SchedulerRegistry,
     private accountService: AccountService,
   ) {}
@@ -172,21 +174,29 @@ export class AutomateService {
   // 自动发布沸点
   async autoPin() {
     const accounts = await this.accountService.getAccountInfo();
-    const questions = await fetchPinListFromV2ex(accounts);
+    const questions = await this.pinRepository
+      .createQueryBuilder('pin')
+      .where('pin.isTemplate = :isTemplate', { isTemplate: true })
+      .orderBy('RAND()')
+      .getMany();
     if (!questions) return;
-    await loopPages(accounts, async (page, index) => {
-      await gotoWithRetries(page, 'https://juejin.cn/pins?source=mainHeader');
-      const loginState = await checkLoginState(page);
-      if (!loginState.state) return;
-      await publishPin(page, questions[index]);
-      await this.accountLogsRepository.save({
-        type: '沸点',
-        event: '发布',
-        content: questions[index],
-        record: '发布成功',
-        account: accounts[index].id,
-      });
-    });
+    await loopPages(
+      accounts,
+      async (page, index) => {
+        await gotoWithRetries(page, 'https://juejin.cn/pins?source=mainHeader');
+        const loginState = await checkLoginState(page);
+        if (!loginState.state) return;
+        await publishPin(page, questions[index].content);
+        await this.accountLogsRepository.save({
+          type: '沸点',
+          event: '发布',
+          content: questions[index].content,
+          record: '发布成功',
+          account: accounts[index].id,
+        });
+      },
+      false,
+    );
   }
 
   // 自动发布文章

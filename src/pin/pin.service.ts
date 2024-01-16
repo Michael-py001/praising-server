@@ -38,7 +38,7 @@ export class PinService {
     });
     // AI审核通过的沸点数
     const aiReviewResultTotal = await this.pinRepository.count({
-      where: { aiReviewResult: true },
+      where: { aiReviewResult: true, isTemplate: false },
     });
 
     return {
