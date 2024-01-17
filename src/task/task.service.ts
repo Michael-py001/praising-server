@@ -1,6 +1,5 @@
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Queue } from 'bull';
 import { AutomateService } from 'src/automate/automate.service';
@@ -120,50 +119,5 @@ export class TaskService {
     return data.map((item) => {
       return item.id;
     });
-  }
-
-  // 定时签到，每天4,5,6,7,8点签到，重复签到，防止漏签
-  @Cron('0 0 4,5,6,7,8 * * *', { name: 'autoSign', timeZone: 'Asia/Shanghai' })
-  autoSign() {
-    this.automateService.autoSign();
-  }
-
-  // 定时点赞，每天8点30文章点赞
-  @Cron('0 30 7 * * *', { name: 'autoArticleStar', timeZone: 'Asia/Shanghai' })
-  autoArticleStar() {
-    this.automateService.autoArticleStar();
-  }
-
-  // 定时点赞，每天8点沸点点赞
-  @Cron('0 0 8 * * *', { name: 'autoPinStar', timeZone: 'Asia/Shanghai' })
-  autoPinStar() {
-    this.automateService.autoPinStar();
-  }
-
-  // 定时评论，每天8点30评论
-  // @Cron('0 30 8 * * *', {
-  //   name: 'autoArticleComment',
-  //   timeZone: 'Asia/Shanghai',
-  // })
-  // autoArticleComment() {
-  //   this.automateService.autoArticleComment();
-  // }
-
-  // 定时关注，每周一，20点关注
-  @Cron('0 0 20 * * 1', { name: 'autoFollow', timeZone: 'Asia/Shanghai' })
-  autoFollow() {
-    this.automateService.autoFollow();
-  }
-
-  // 定时发布沸点，每周二，20点发布
-  @Cron('0 0 20 * * 2', { name: 'autoPin', timeZone: 'Asia/Shanghai' })
-  autoPin() {
-    this.automateService.autoPin();
-  }
-
-  // 定时发布文章，每周五，20点发布
-  @Cron('0 0 20 * * 5', { name: 'autoArticle', timeZone: 'Asia/Shanghai' })
-  autoArticle() {
-    this.automateService.autoArticle();
   }
 }

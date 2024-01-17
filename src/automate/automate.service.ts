@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SchedulerRegistry } from '@nestjs/schedule';
+import { Cron, SchedulerRegistry } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
 import { AccountLog } from 'src/entities/accountLog.entity';
 import { Account } from 'src/entities/account.entity';
@@ -42,7 +42,8 @@ export class AutomateService {
     private accountService: AccountService,
   ) {}
 
-  // 自动签到
+  // 定时签到，每天4,5,6,7,8点签到，重复签到，防止漏签
+  @Cron('0 0 4,5,6,7,8 * * *', { name: 'autoSign', timeZone: 'Asia/Shanghai' })
   async autoSign() {
     const accounts = await this.accountService.getAccountInfo();
     await loopPages(accounts, async (page, index) => {
@@ -71,7 +72,8 @@ export class AutomateService {
     });
   }
 
-  // 自动关注
+  // 定时关注，每周一，20点关注
+  @Cron('0 0 20 * * 1', { name: 'autoFollow', timeZone: 'Asia/Shanghai' })
   async autoFollow() {
     const accounts = await this.accountService.getAccountInfo();
     await loopPages(accounts, async (page, index) => {
@@ -95,7 +97,8 @@ export class AutomateService {
     });
   }
 
-  // 文章自动点赞
+  // 文章自动点赞，定时点赞，每天8点30文章点赞
+  @Cron('0 30 7 * * *', { name: 'autoArticleStar', timeZone: 'Asia/Shanghai' })
   async autoArticleStar() {
     const accounts = await this.accountService.getAccountInfo();
     await loopPages(accounts, async (page, index) => {
@@ -118,7 +121,8 @@ export class AutomateService {
     });
   }
 
-  // 沸点自动点赞
+  // 沸点自动点赞，定时点赞，每天8点沸点点赞
+  @Cron('0 0 8 * * *', { name: 'autoPinStar', timeZone: 'Asia/Shanghai' })
   async autoPinStar() {
     const accounts = await this.accountService.getAccountInfo();
     await loopPages(accounts, async (page, index) => {
@@ -180,7 +184,8 @@ export class AutomateService {
     });
   }
 
-  // 自动发布沸点
+  // 定时发布沸点，每周二，20点发布
+  @Cron('0 0 20 * * 2', { name: 'autoPin', timeZone: 'Asia/Shanghai' })
   async autoPin() {
     const accounts = await this.accountService.getAccountInfo();
     const questions = await this.pinRepository
@@ -204,7 +209,8 @@ export class AutomateService {
     });
   }
 
-  // 自动发布文章
+  // 定时发布文章，每周五，20点发布
+  @Cron('0 0 20 * * 5', { name: 'autoArticle', timeZone: 'Asia/Shanghai' })
   async autoArticle() {
     const accounts = await this.accountService.getAccountInfo();
 
