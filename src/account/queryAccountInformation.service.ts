@@ -31,7 +31,7 @@ export class QueryAccountInformationService {
   }
 
   // 每日 3 点更新账号信息
-  @Cron('0 30 3 * * *', { name: 'checkCookie', timeZone: 'Asia/Shanghai' })
+  @Cron('0 30 * * * *', { name: 'checkCookie', timeZone: 'Asia/Shanghai' })
   auto() {
     this.queryAccountInformation();
   }
