@@ -45,21 +45,34 @@ export class AutomateService {
   // 自动签到
   async autoSign() {
     const accounts = await this.accountService.getAccountInfo();
-    await loopPages(accounts, async (page, index) => {
-      await gotoWithRetries(page, 'https://juejin.cn/user/center/signin');
-      const loginState = await checkLoginState(page);
-      if (!loginState.state) return;
-      const isSign = await fetchSign(page);
-      if (isSign) {
-        await this.accountLogsRepository.save({
-          type: '账号',
-          event: '签到',
-          content: '掘金每日签到',
-          record: '签到成功',
-          account: accounts[index].id,
-        });
-      }
-    });
+    await loopPages(
+      accounts,
+      async (page, index) => {
+        await gotoWithRetries(page, 'https://juejin.cn/user/center/signin');
+        const loginState = await checkLoginState(page);
+        if (!loginState.state) return;
+        const isSign = await fetchSign(page);
+        await gotoWithRetries(page, 'https://juejin.cn/user/center/lottery');
+        await page.waitForSelector('.cost-box');
+        await page.waitForTimeout(1000);
+        const btn = await page.$('#turntable-item-0');
+        const isFree = await btn.$('.text-free');
+        if (isFree) {
+          await btn.click();
+        }
+        await page.waitForTimeout(1000);
+        if (isSign) {
+          await this.accountLogsRepository.save({
+            type: '账号',
+            event: '签到',
+            content: '掘金每日签到，抽奖',
+            record: '签到成功',
+            account: accounts[index].id,
+          });
+        }
+      },
+      false,
+    );
   }
 
   // 自动关注
