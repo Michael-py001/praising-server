@@ -122,8 +122,8 @@ export class TaskService {
     });
   }
 
-  // 定时签到，每天6点签到
-  @Cron('0 0 6 * * *', { name: 'autoSign', timeZone: 'Asia/Shanghai' })
+  // 定时签到，每天4,5,6,7,8点签到，重复签到，防止漏签
+  @Cron('0 0 4,5,6,7,8 * * *', { name: 'autoSign', timeZone: 'Asia/Shanghai' })
   autoSign() {
     this.automateService.autoSign();
   }
