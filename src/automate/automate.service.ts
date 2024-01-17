@@ -13,7 +13,6 @@ import loopPages from 'src/libs/pageControl/loopPages';
 import articleListStar from 'src/libs/pageControl/articleListStar';
 import pinListStar from 'src/libs/pageControl/pinListStar';
 import gotoWithRetries from 'src/libs/gotoWithRetries';
-import articleComment from 'src/libs/pageControl/articleComment';
 import publishPin from 'src/libs/pageControl/publishPin';
 import {
   fetchArticle,
@@ -24,6 +23,10 @@ import fetchSign from 'src/libs/pageControl/fetchSign';
 import { UserInfo } from 'src/entities/userinfo.entity';
 import scrollToBottom from 'src/libs/scrollToBottom';
 import { Pin } from 'src/entities/pin.entity';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import articlePublishComment from 'src/libs/pageControl/publishArticleComment';
 
 @Injectable()
 export class AutomateService {
@@ -40,6 +43,8 @@ export class AutomateService {
     private pinRepository: Repository<Pin>,
     private schedulerRegistry: SchedulerRegistry,
     private accountService: AccountService,
+    private readonly httpService: HttpService,
+    private configService: ConfigService,
   ) {}
 
   // 定时签到，每天4,5,6,7,8点签到，重复签到，防止漏签
@@ -145,25 +150,59 @@ export class AutomateService {
   }
 
   // 文章自动评论
+  @Cron('0 0 9 * * *', { name: 'autoPinStar', timeZone: 'Asia/Shanghai' })
   async autoArticleComment() {
     const accounts = await this.accountService.getAccountInfo();
-    const comments = await this.commentRepository
-      .createQueryBuilder('comment')
-      .where('comment.type = :type', { type: '好评' })
-      .getMany();
-
     await loopPages(accounts, async (page, index) => {
       await gotoWithRetries(page, 'https://juejin.cn/');
       const loginState = await checkLoginState(page);
       if (!loginState.state) return;
-      const data = await articleComment(page, comments);
-      if (!data) return;
+      await page.waitForSelector('.entry-list');
+      const article = await page.$$('.title-row a.title').then((res) => {
+        // 随机获取一篇文章
+        const random = Math.floor(Math.random() * res.length);
+        return res[random].evaluate((node) => {
+          return {
+            title: node.innerText,
+            href: node.href,
+          };
+        });
+      });
+      const chatKey = this.configService.get<string>('CHAT_KEY');
+      const { data } = await firstValueFrom(
+        this.httpService.post(
+          'https://api.chatanywhere.com.cn/v1/chat/completions',
+          {
+            model: 'gpt-3.5-turbo',
+            messages: [
+              {
+                role: 'user',
+                content: `根据文章标题“${article.title}“，给出一个简短的评论，不要超过30字，不要有叹号，回答俏皮一点，不要有实际观点，，别非常容易被识别为机器人的回答`,
+              },
+            ],
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${chatKey}`,
+            },
+          },
+        ),
+      );
+      const comment = data.choices[0].message.content.replace(
+        /[.,!"“”。！]/g,
+        '',
+      );
+      console.log(`正在评论文章： ${article.title}，内容为：${comment}`);
+      await page.goto(article.href);
+      const commentResult = await articlePublishComment(page, comment);
+      if (!commentResult) return;
       this.accountLogsRepository.save({
         type: '文章',
         event: '评论',
-        content: data.title,
-        link: data.link,
-        record: data.comment,
+        content: article.title,
+        link: article.href,
+        record: comment,
         account: accounts[index].id,
       });
       const id = accounts[index].id;
@@ -172,14 +211,6 @@ export class AutomateService {
       });
       await this.userInfoRepository.update(userInfo.id, {
         contribution: userInfo.contribution + 20,
-      });
-      // 评论次数 + 1
-      const commentId = data.id;
-      await this.commentRepository.findOne({
-        where: { id: commentId },
-      });
-      await this.commentRepository.update(commentId, {
-        useCount: data.useCount + 1,
       });
     });
   }

@@ -10,10 +10,12 @@ import { Account } from 'src/entities/account.entity';
 import { UserInfo } from 'src/entities/userinfo.entity';
 import { Comment } from 'src/entities/comment.entity';
 import { Pin } from 'src/entities/pin.entity';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
     AccountModule,
+    HttpModule,
     TypeOrmModule.forFeature([AccountLog, Account, UserInfo, Comment, Pin]),
   ],
   controllers: [AutomateController],
