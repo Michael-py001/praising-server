@@ -180,23 +180,19 @@ export class AutomateService {
       .orderBy('RAND()')
       .getMany();
     if (!questions) return;
-    await loopPages(
-      accounts,
-      async (page, index) => {
-        await gotoWithRetries(page, 'https://juejin.cn/pins?source=mainHeader');
-        const loginState = await checkLoginState(page);
-        if (!loginState.state) return;
-        await publishPin(page, questions[index].content);
-        await this.accountLogsRepository.save({
-          type: '沸点',
-          event: '发布',
-          content: questions[index].content,
-          record: '发布成功',
-          account: accounts[index].id,
-        });
-      },
-      false,
-    );
+    await loopPages(accounts, async (page, index) => {
+      await gotoWithRetries(page, 'https://juejin.cn/pins?source=mainHeader');
+      const loginState = await checkLoginState(page);
+      if (!loginState.state) return;
+      await publishPin(page, questions[index].content);
+      await this.accountLogsRepository.save({
+        type: '沸点',
+        event: '发布',
+        content: questions[index].content,
+        record: '发布成功',
+        account: accounts[index].id,
+      });
+    });
   }
 
   // 自动发布文章
