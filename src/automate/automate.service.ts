@@ -148,8 +148,8 @@ export class AutomateService {
     });
   }
 
-  // 文章自动评论
-  @Cron('0 0 9 * * *', { name: 'autoPinStar', timeZone: 'Asia/Shanghai' })
+  // 文章自动评论，每周三晚 8 点评论
+  @Cron('0 0 20 * * 3', { name: 'autoPin', timeZone: 'Asia/Shanghai' })
   async autoArticleComment() {
     const accounts = await this.accountService.getAccountInfo();
     await loopPages(accounts, async (page, index) => {
@@ -240,7 +240,7 @@ export class AutomateService {
   }
 
   // 定时发布文章，每周五，20点发布
-  @Cron('0 0 20 * * 5', { name: 'autoArticle', timeZone: 'Asia/Shanghai' })
+  // @Cron('0 0 20 * * 5', { name: 'autoArticle', timeZone: 'Asia/Shanghai' })
   async autoArticle() {
     const accounts = await this.accountService.getAccountInfo();
 
