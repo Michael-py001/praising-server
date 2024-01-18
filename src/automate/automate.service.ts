@@ -57,7 +57,6 @@ export class AutomateService {
       if (!loginState.state) return;
       const isSign = await fetchSign(page);
       await gotoWithRetries(page, 'https://juejin.cn/user/center/lottery');
-      await page.waitForSelector('.cost-box');
       await page.waitForTimeout(1000);
       const btn = await page.$('#turntable-item-0');
       const isFree = await btn.$('.text-free');
