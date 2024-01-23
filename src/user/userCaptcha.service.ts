@@ -8,6 +8,7 @@ import browserInit from 'src/libs/browserInit';
 import { Frame, Page } from 'puppeteer';
 import fetchUserInfo from 'src/libs/pageControl/fetchUserInfo';
 import { cookiesToString } from 'src/libs/cookie';
+import { Subscriber } from 'rxjs';
 @Injectable()
 export class UserCaptchaService {
   constructor(
@@ -141,16 +142,29 @@ export class UserCaptchaService {
   }
 
   // 通过密码登录
-  async loginWithPassword(account: string, password: string, shareId?: string) {
-    console.log('登录', account, password, shareId);
+  async loginWithPassword(
+    account: string,
+    password: string,
+    shareId?: string,
+    observer?: Subscriber<any>,
+  ) {
+    observer.next({
+      data: { message: '正在进入掘金登录页面', type: 'success' },
+    });
     const { page, destroy } = await browserInit('new', true);
     await page.goto('https://juejin.cn/login');
     await page.waitForSelector('.other-login-box .clickable');
     await page.click('.other-login-box .clickable');
     await page.waitForSelector('.input-group input[name="loginPhoneOrEmail"]');
+    observer.next({
+      data: { message: '正在进入输入账号密码', type: 'success' },
+    });
     await page.type('.input-group input[name="loginPhoneOrEmail"]', account);
     await page.type('.input-group input[name="loginPassword"]', password);
     await page.click('.btn-login');
+    observer.next({
+      data: { message: '正在破解滑块验证码', type: 'success' },
+    });
     // 等待 .vc_captcha_wrapper 下的 iframe 加载完成
     await page.waitForSelector('iframe');
     // 获取 iframe
@@ -162,13 +176,21 @@ export class UserCaptchaService {
     } catch (error) {
       console.log(error);
       destroy();
-      throw new Error('滑块验证失败，请重试');
+      observer.next({
+        data: { message: '滑块验证失败，请重试', type: 'error' },
+      });
     }
+    observer.next({
+      data: { message: '正在获取用户信息', type: 'success' },
+    });
     // 获取 cookie
     const userInfoData = await fetchUserInfo(page);
     if (!userInfoData) {
       destroy();
-      throw new Error('用户信息获取失败，请重试');
+      observer.next({
+        data: { message: '用户信息获取失败，请重试', type: 'error' },
+      });
+      return;
     }
     const { username, userId, starNumber, articleInfo, pinInfo, avatar } =
       userInfoData;
@@ -200,11 +222,17 @@ export class UserCaptchaService {
     };
 
     if (hasUser) {
+      observer.next({
+        data: { message: '正在更新用户信息', type: 'success' },
+      });
       await this.accountRepository.update(
         { id: hasUser.id },
         { cookie, account, password },
       );
     } else {
+      observer.next({
+        data: { message: '正在创建用户', type: 'success' },
+      });
       if (shareId) {
         userInfo.contribution += 500;
         const sharedUser = await this.accountRepository
@@ -224,16 +252,21 @@ export class UserCaptchaService {
         userInfo,
       });
     }
-
     destroy();
-    return {
-      username,
-      userId,
-      starNumber,
-      articleInfo,
-      pinInfo,
-      avatar,
-      cookie,
-    };
+    observer.next({
+      data: {
+        message: '登录成功，正在跳转...',
+        type: 'end',
+        data: {
+          username,
+          userId,
+          starNumber,
+          articleInfo,
+          pinInfo,
+          avatar,
+          cookie,
+        },
+      },
+    });
   }
 }
