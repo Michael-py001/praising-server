@@ -30,8 +30,8 @@ export class QueryAccountInformationService {
     });
   }
 
-  // 每日 3 点更新账号信息
-  @Cron('0 30 * * * *', { name: 'checkCookie', timeZone: 'Asia/Shanghai' })
+  // 每日 3 点 30 更新账号信息
+  @Cron('0 30 3 * * *', { name: 'auto' })
   auto() {
     this.queryAccountInformation();
   }
