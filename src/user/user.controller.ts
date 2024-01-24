@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CookieDto, SetMainAccountDto, UpdateUserInfoDto } from './user.dto';
+import {
+  CookieDto,
+  SetMainAccountDto,
+  UpdateUserInfoDto,
+  LoginSseData,
+} from './user.dto';
 import { AuthAdminGuard } from 'src/common/guards/authAdmin.guard';
 import { UserCaptchaService } from './userCaptcha.service';
 import { Observable } from 'rxjs';
@@ -27,20 +32,17 @@ export class UserController {
   // 使用账号密码登录，检验验证码
   @ApiOperation({ summary: '账号密码登录（自动识别验证码）' })
   @Sse('login')
-  async login(
+  login(
     @Query('account') account: string,
     @Query('password') password: string,
     @Query('shareId') shareId?: string,
-  ): Promise<any> {
+  ): Observable<LoginSseData> {
     console.log(account, password, shareId);
-    return new Observable((observer) => {
-      this.userCaptchaService.loginWithPassword(
-        account,
-        password,
-        shareId,
-        observer,
-      );
-    });
+    return this.userCaptchaService.loginWithPassword(
+      account,
+      password,
+      shareId,
+    );
   }
 
   // 退出登录

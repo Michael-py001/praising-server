@@ -3,12 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account } from 'src/entities/account.entity';
 import { UserInfo } from 'src/entities/userinfo.entity';
-import { AccountLog } from 'src/entities/accountLog.entity';
 import browserInit from 'src/libs/browserInit';
 import { Frame, Page } from 'puppeteer';
 import fetchUserInfo from 'src/libs/pageControl/fetchUserInfo';
 import { cookiesToString } from 'src/libs/cookie';
-import { Subscriber } from 'rxjs';
+import { Observable, Subscriber } from 'rxjs';
+import { LoginSseData } from './user.dto';
+
 @Injectable()
 export class UserCaptchaService {
   constructor(
@@ -16,15 +17,144 @@ export class UserCaptchaService {
     private accountRepository: Repository<Account>,
     @InjectRepository(UserInfo)
     private readonly userInfoRepository: Repository<UserInfo>,
-    @InjectRepository(AccountLog)
-    private readonly accountLogRepository: Repository<AccountLog>,
   ) {}
+
+  // 通过密码登录
+  loginWithPassword(account: string, password: string, shareId?: string) {
+    return new Observable((observer: Subscriber<LoginSseData>) => {
+      (async () => {
+        observer.next({
+          data: { message: '正在进入掘金登录页面', type: 'success' },
+        });
+        const { page, destroy } = await browserInit('new', true);
+        await page.goto('https://juejin.cn/login');
+        await page.waitForSelector('.other-login-box .clickable');
+        await page.click('.other-login-box .clickable');
+        await page.waitForSelector(
+          '.input-group input[name="loginPhoneOrEmail"]',
+        );
+        observer.next({
+          data: { message: '正在进入输入账号密码', type: 'success' },
+        });
+        await page.type(
+          '.input-group input[name="loginPhoneOrEmail"]',
+          account,
+        );
+        await page.type('.input-group input[name="loginPassword"]', password);
+        await page.click('.btn-login');
+        observer.next({
+          data: { message: '正在破解滑块验证码', type: 'success' },
+        });
+        // 等待 .vc_captcha_wrapper 下的 iframe 加载完成
+        await page.waitForSelector('iframe');
+        // 获取 iframe
+        const elementHandle = await page.$('iframe');
+        // 获取 iframe 的 contentWindow
+        const frame = await elementHandle.contentFrame();
+        try {
+          await this.handleDrag(page, frame);
+        } catch (error) {
+          console.log(error);
+          destroy();
+          observer.next({
+            data: { message: '滑块验证失败，请重试', type: 'error' },
+          });
+        }
+        observer.next({
+          data: { message: '正在获取用户信息', type: 'success' },
+        });
+        // 获取 cookie
+        const userInfoData = await fetchUserInfo(page);
+        if (!userInfoData) {
+          destroy();
+          observer.next({
+            data: { message: '用户信息获取失败，请重试', type: 'error' },
+          });
+          return;
+        }
+        const { username, userId, starNumber, articleInfo, pinInfo, avatar } =
+          userInfoData;
+        // userinfo 库 查询是否存在 userId
+        const hasUser = await this.accountRepository
+          .createQueryBuilder('account')
+          .leftJoinAndSelect('account.userInfo', 'userInfo')
+          .where('userInfo.userId = :userId', { userId })
+          .getOne();
+        const cookies = await page.cookies();
+        const cookie = cookiesToString(cookies);
+
+        const userInfo = {
+          username,
+          userId,
+          avatar,
+          contribution: 0,
+          userArticleLike: starNumber[0],
+          userPinLike: starNumber[1],
+          totalArticle: articleInfo[0],
+          articleShow: articleInfo[1],
+          articleRead: articleInfo[2],
+          articleLike: articleInfo[3],
+          articleComment: articleInfo[4],
+          articleCollect: articleInfo[5],
+          totalPin: pinInfo[0],
+          totalPinLike: pinInfo[1],
+          totalPinComment: pinInfo[2],
+        };
+
+        if (hasUser) {
+          observer.next({
+            data: { message: '正在更新用户信息', type: 'success' },
+          });
+          await this.accountRepository.update(
+            { id: hasUser.id },
+            { cookie, account, password },
+          );
+        } else {
+          observer.next({
+            data: { message: '正在创建用户', type: 'success' },
+          });
+          if (shareId) {
+            userInfo.contribution += 500;
+            const sharedUser = await this.accountRepository
+              .createQueryBuilder('account')
+              .leftJoinAndSelect('account.userInfo', 'userInfo')
+              .where('userInfo.userId = :userId', { userId: shareId })
+              .getOne();
+            if (sharedUser) {
+              sharedUser.userInfo.contribution += 500;
+              await this.userInfoRepository.save(sharedUser.userInfo);
+            }
+          }
+          await this.accountRepository.save({
+            cookie,
+            account,
+            password,
+            userInfo,
+          });
+        }
+        destroy();
+        observer.next({
+          data: {
+            message: '登录成功，正在跳转...',
+            type: 'end',
+            data: {
+              username,
+              userId,
+              starNumber,
+              articleInfo,
+              pinInfo,
+              avatar,
+              cookie,
+            },
+          },
+        });
+      })();
+    });
+  }
 
   // 计算滑块缺口X轴位置
   async getCaptchaX(frame: Frame) {
     await frame.waitForSelector('#captcha_verify_image');
-    const captchaImage = await frame.$('#captcha_verify_image');
-    console.log(captchaImage);
     const coordinateShift = await frame.evaluate(async () => {
       await new Promise((resolve) => {
         setTimeout(() => {
@@ -34,16 +164,12 @@ export class UserCaptchaService {
       const image = document.querySelector(
         '.verify-image>#captcha_verify_image',
       ) as HTMLCanvasElement;
-      console.log(document);
-      console.log('image', image);
       const ctx = image.getContext('2d');
-      // 延时
       await new Promise((resolve) => {
         setTimeout(() => {
           resolve(null);
         }, 1000);
       });
-
       // 将验证码底图绘制到画布上
       ctx.drawImage(image, 0, 0, image.width, image.height);
       // 获取画布上的像素数据
@@ -83,6 +209,7 @@ export class UserCaptchaService {
     });
     return coordinateShift * 0.625;
   }
+
   // 处理滑块逻辑
   async handleDrag(page: Page, frame: Frame) {
     function easeOutBounce(t: number, b: number, c: number, d: number) {
@@ -131,142 +258,10 @@ export class UserCaptchaService {
       await page.mouse.up();
     }
     try {
-      console.log('滑块验证成功，等待页面跳转');
       // 等待页面跳转
       await page.waitForNavigation();
-      console.log('登录成功');
     } catch (error) {
-      console.log('登录失败');
       throw new Error('登录失败');
     }
-  }
-
-  // 通过密码登录
-  async loginWithPassword(
-    account: string,
-    password: string,
-    shareId?: string,
-    observer?: Subscriber<any>,
-  ) {
-    observer.next({
-      data: { message: '正在进入掘金登录页面', type: 'success' },
-    });
-    const { page, destroy } = await browserInit('new', true);
-    await page.goto('https://juejin.cn/login');
-    await page.waitForSelector('.other-login-box .clickable');
-    await page.click('.other-login-box .clickable');
-    await page.waitForSelector('.input-group input[name="loginPhoneOrEmail"]');
-    observer.next({
-      data: { message: '正在进入输入账号密码', type: 'success' },
-    });
-    await page.type('.input-group input[name="loginPhoneOrEmail"]', account);
-    await page.type('.input-group input[name="loginPassword"]', password);
-    await page.click('.btn-login');
-    observer.next({
-      data: { message: '正在破解滑块验证码', type: 'success' },
-    });
-    // 等待 .vc_captcha_wrapper 下的 iframe 加载完成
-    await page.waitForSelector('iframe');
-    // 获取 iframe
-    const elementHandle = await page.$('iframe');
-    // 获取 iframe 的 contentWindow
-    const frame = await elementHandle.contentFrame();
-    try {
-      await this.handleDrag(page, frame);
-    } catch (error) {
-      console.log(error);
-      destroy();
-      observer.next({
-        data: { message: '滑块验证失败，请重试', type: 'error' },
-      });
-    }
-    observer.next({
-      data: { message: '正在获取用户信息', type: 'success' },
-    });
-    // 获取 cookie
-    const userInfoData = await fetchUserInfo(page);
-    if (!userInfoData) {
-      destroy();
-      observer.next({
-        data: { message: '用户信息获取失败，请重试', type: 'error' },
-      });
-      return;
-    }
-    const { username, userId, starNumber, articleInfo, pinInfo, avatar } =
-      userInfoData;
-    // userinfo 库 查询是否存在 userId
-    const hasUser = await this.accountRepository
-      .createQueryBuilder('account')
-      .leftJoinAndSelect('account.userInfo', 'userInfo')
-      .where('userInfo.userId = :userId', { userId })
-      .getOne();
-    const cookies = await page.cookies();
-    const cookie = cookiesToString(cookies);
-
-    const userInfo = {
-      username,
-      userId,
-      avatar,
-      contribution: 0,
-      userArticleLike: starNumber[0],
-      userPinLike: starNumber[1],
-      totalArticle: articleInfo[0],
-      articleShow: articleInfo[1],
-      articleRead: articleInfo[2],
-      articleLike: articleInfo[3],
-      articleComment: articleInfo[4],
-      articleCollect: articleInfo[5],
-      totalPin: pinInfo[0],
-      totalPinLike: pinInfo[1],
-      totalPinComment: pinInfo[2],
-    };
-
-    if (hasUser) {
-      observer.next({
-        data: { message: '正在更新用户信息', type: 'success' },
-      });
-      await this.accountRepository.update(
-        { id: hasUser.id },
-        { cookie, account, password },
-      );
-    } else {
-      observer.next({
-        data: { message: '正在创建用户', type: 'success' },
-      });
-      if (shareId) {
-        userInfo.contribution += 500;
-        const sharedUser = await this.accountRepository
-          .createQueryBuilder('account')
-          .leftJoinAndSelect('account.userInfo', 'userInfo')
-          .where('userInfo.userId = :userId', { userId: shareId })
-          .getOne();
-        if (sharedUser) {
-          sharedUser.userInfo.contribution += 500;
-          await this.userInfoRepository.save(sharedUser.userInfo);
-        }
-      }
-      await this.accountRepository.save({
-        cookie,
-        account,
-        password,
-        userInfo,
-      });
-    }
-    destroy();
-    observer.next({
-      data: {
-        message: '登录成功，正在跳转...',
-        type: 'end',
-        data: {
-          username,
-          userId,
-          starNumber,
-          articleInfo,
-          pinInfo,
-          avatar,
-          cookie,
-        },
-      },
-    });
   }
 }

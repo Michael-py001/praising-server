@@ -22,3 +22,19 @@ export class UpdateUserInfoDto {
   @ApiProperty({ description: '主账号ID' })
   mainAccount?: string;
 }
+
+export type LoginSseData = {
+  data: {
+    message: string;
+    type: string;
+    data?: {
+      username: string;
+      userId: string;
+      starNumber: number[];
+      articleInfo: number[];
+      pinInfo: number[];
+      avatar: string;
+      cookie: string;
+    };
+  };
+};
