@@ -54,9 +54,8 @@ export class UserCaptchaService {
         try {
           await this.handleDrag(page, frame);
         } catch (error) {
-          console.log(error);
           destroy();
-          observer.next({
+          observer.error({
             data: { message: '滑块验证失败，请重试', type: 'error' },
           });
         }
@@ -67,7 +66,7 @@ export class UserCaptchaService {
         const userInfoData = await fetchUserInfo(page);
         if (!userInfoData) {
           destroy();
-          observer.next({
+          observer.error({
             data: { message: '用户信息获取失败，请重试', type: 'error' },
           });
           return;
@@ -148,6 +147,7 @@ export class UserCaptchaService {
             },
           },
         });
+        observer.complete();
       })();
     });
   }

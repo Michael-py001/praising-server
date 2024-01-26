@@ -11,6 +11,8 @@ import { setCookie } from 'src/libs/cookie';
 import browserInit from 'src/libs/browserInit';
 import { UserCaptchaService } from 'src/user/userCaptcha.service';
 
+import { catchError, concat, of } from 'rxjs';
+
 export interface Message {
   type: string;
   avatar: string;
@@ -104,21 +106,28 @@ export class AccountService {
       // 具有 account 和 password
       .where('account.account != :account', { account: '' })
       .andWhere('account.password != :password', { password: '' })
-      // 并且 cookie 为 null
+      // 并且 cookie 为 null 或者 ''
       .andWhere('account.cookie is null')
+      .orWhere('account.cookie = :cookie', { cookie: '' })
       .getMany();
 
+    const obs = [];
     for (let index = 0; index < accounts.length; index++) {
       const account = accounts[index];
-      try {
-        await this.userCaptchaService.loginWithPassword(
-          account.account,
-          account.password,
+      const ob = this.userCaptchaService
+        .loginWithPassword(account.account, account.password)
+        .pipe(
+          catchError(() => {
+            return of(null);
+          }),
         );
-      } catch (error) {
-        console.log(error);
-      }
+      obs.push(ob);
     }
+    concat(...obs).subscribe({
+      next: (data) => {
+        console.log(data);
+      },
+    });
   }
 
   // 分页获取日志，account 关联 userInfo

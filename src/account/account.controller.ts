@@ -60,9 +60,8 @@ export class AccountController {
     };
   }
 
-  @ApiOperation({ summary: '手动登录获取 cookie（本地服务）' })
+  @ApiOperation({ summary: '检测未登录账号' })
   @Get('getCookie')
-  @UseGuards(AuthAdminGuard)
   getCookie() {
     this.accountService.getCookie();
     return {

@@ -83,7 +83,6 @@ export default async function fetchUserInfo(page: Page) {
       unreadMessage,
     };
   } catch (error) {
-    console.log(error);
     return false;
   }
 }

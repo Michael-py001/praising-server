@@ -37,7 +37,6 @@ export class UserController {
     @Query('password') password: string,
     @Query('shareId') shareId?: string,
   ): Observable<LoginSseData> {
-    console.log(account, password, shareId);
     return this.userCaptchaService.loginWithPassword(
       account,
       password,
