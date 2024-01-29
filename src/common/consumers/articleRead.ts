@@ -25,20 +25,12 @@ export class ArticleReadConsumer {
     await job.progress(100);
     await scrollToBottom(page);
     await page.waitForTimeout(1000);
-    await scrollToBottom(page);
-    await page.waitForTimeout(1000);
-    await scrollToBottom(page);
-    await page.waitForTimeout(1000);
-    await scrollToBottom(page);
-    await page.waitForTimeout(1000);
-    await scrollToBottom(page);
-    await page.waitForTimeout(1000);
-    await destroy();
+    destroy();
     await this.accountLogsRepository.save({
       type: '文章',
       event: '阅读',
       link: url,
-      content: `阅读量：10，奖励1点贡献值。`,
+      content: `阅读量：1，奖励1点贡献值。`,
       record: `阅读成功`,
       account: accounts[0].id,
     });
