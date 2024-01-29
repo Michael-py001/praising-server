@@ -45,7 +45,7 @@ export class ManualArticleCommentService {
         })
         .andWhere('comment.enable = :enable', { enable: 1 })
         .orderBy('RAND()')
-        .limit(data.quantity)
+        .limit(data.quantity || 1)
         .getMany();
       const onlyContent = commentList.map((item) => item.content);
       comments.push(...onlyContent);
