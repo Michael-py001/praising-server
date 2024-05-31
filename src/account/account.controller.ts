@@ -25,7 +25,6 @@ export class AccountController {
 
   @ApiOperation({ summary: '单独访问账号（本地服务）' })
   @Get('visitAccount')
-  @UseGuards(AuthAdminGuard)
   async visitAccount(@Query('id') id: number) {
     const data = await this.accountService.visitAccount(id);
     return {

@@ -8,7 +8,7 @@ export default async function browserInit(
   const browser = await puppeteer.launch({
     headless: browserHeadless,
     defaultViewport: {
-      width: 1200,
+      width: 1600,
       height: 800,
     },
     args: [
