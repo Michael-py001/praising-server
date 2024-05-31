@@ -26,7 +26,7 @@ export class UserCaptchaService {
         observer.next({
           data: { message: '正在进入掘金登录页面', type: 'success' },
         });
-        const { page, destroy } = await browserInit(false, true);
+        const { page, destroy } = await browserInit('new', true);
         await page.goto('https://juejin.cn/login');
         await page.waitForSelector('.other-login-box .clickable');
         await page.click('.other-login-box .clickable');
